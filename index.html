@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagen Master Prompt Engine | Professional AI Tool</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-0: #0a0a0c;
+            --bg-1: #121217;
+            --card: #18181f;
+            --card-border: #2a2a35;
+            --text-0: #f8f8fa;
+            --text-1: #b0b0bc;
+            --text-2: #71717a;
+            --accent-1: #8b5cf6;
+            --accent-2: #10b981;
+            --accent-grad: linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #10b981 100%);
+            --danger: #ef4444;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            background-color: var(--bg-0);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+            color: var(--text-0);
+            font-family: 'Inter', "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .accent-text {
+            background: var(--accent-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.25rem;
+        }
+
+        .chip-active {
+            background: var(--accent-grad);
+            color: #000;
+            font-weight: 600;
+            border-color: transparent;
+        }
+
+        .step-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step-open .step-content {
+            max-height: 1000px;
+        }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0d0d12;
+            border: 1px solid #22222b;
+        }
+
+        .toast {
+            transform: translateX(-50%) translateY(100%);
+            transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-0); }
+        ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
+    </style>
+</head>
+<body class="py-12 px-4 md:px-6">
+
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <header class="text-center mb-12">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-semibold tracking-wider text-violet-400 uppercase mb-6">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            Gemini Imagen Optimized
+        </div>
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
+            <span class="accent-text">Imagen Master</span> Prompt Engine
+        </h1>
+        <p class="text-zinc-400 text-lg max-w-xl mx-auto">
+            直感的な日本語入力から、Imagen 3のポテンシャルを最大限に引き出すプロンプトを構築します。
+        </p>
+    </header>
+
+    <!-- Main Input Card -->
+    <div class="glass-card rounded-[2rem] p-6 md:p-10 mb-8">
+        <!-- Image Idea -->
+        <div class="mb-8">
+            <label class="block text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
+                <i data-lucide="image" class="w-4 h-4"></i> 描きたいイメージ（日本語）
+            </label>
+            <textarea id="ideaInput" 
+                class="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-zinc-100 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all min-h-[120px] text-lg"
+                placeholder="例：サイバーパンクな都市の路地裏で、雨に濡れながら佇む黒猫"></textarea>
+            <div id="errorMsg" class="hidden mt-2 text-red-400 text-sm flex items-center gap-1">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i> イメージを入力してください
+            </div>
+        </div>
+
+        <!-- Style Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label class="block text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="palette" class="w-4 h-4"></i> 画風スタイル
+                </label>
+                <select id="styleSelect" class="custom-select w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-zinc-100 focus:ring-2 focus:ring-violet-500/50 outline-none cursor-pointer">
+                    <!-- Styles will be injected here -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="maximize" class="w-4 h-4"></i> アスペクト比
+                </label>
+                <div id="ratioContainer" class="flex gap-2">
+                    <!-- Ratios will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <label class="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl cursor-pointer hover:bg-zinc-800/50 transition-colors">
+                <input type="checkbox" id="charLock" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-violet-600 focus:ring-violet-500/50">
+                <div>
+                    <div class="text-sm font-bold text-zinc-200">キャラクター固定</div>
+                    <div class="text-xs text-zinc-500">同一の顔立ちと特徴を維持</div>
+                </div>
+            </label>
+            <label class="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl cursor-pointer hover:bg-zinc-800/50 transition-colors">
+                <input type="checkbox" id="detailedLighting" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-emerald-500/50">
+                <div>
+                    <div class="text-sm font-bold text-zinc-200">ライティング詳細化</div>
+                    <div class="text-xs text-zinc-500">光の反射と影をよりドラマチックに</div>
+                </div>
+            </label>
+        </div>
+
+        <!-- Generate Button -->
+        <button id="generateBtn" class="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-emerald-500 text-black font-black text-lg py-5 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_40px_-10px_rgba(139,92,246,0.5)] flex items-center justify-center gap-3">
+            <i data-lucide="wand-2" class="w-6 h-6"></i>
+            プロンプトを生成する
+        </button>
+        <p class="text-center text-[11px] text-zinc-600 mt-5">
+            ※ 一部の画風は生成AI側の安全フィルターにより制限される場合があります
+        </p>
+    </div>
+
+    <!-- Result Area -->
+    <div id="resultArea" class="hidden space-y-4 mb-12">
+        <!-- Step 1: Explanation -->
+        <div class="glass-card rounded-3xl overflow-hidden step-open" id="step1">
+            <button class="w-full flex items-center justify-between p-6 text-left" onclick="toggleStep('step1')">
+                <div class="flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center text-sm font-bold">1</span>
+                    <span class="font-bold">生成イメージの解説</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 transition-transform"></i>
+            </button>
+            <div class="step-content">
+                <div class="p-6 pt-0 border-t border-zinc-800/50 mt-4">
+                    <ul id="explanationList" class="space-y-3 text-zinc-400 text-sm">
+                        <!-- Content injected here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Main Prompt -->
+        <div class="glass-card rounded-3xl overflow-hidden step-open" id="step2">
+            <button class="w-full flex items-center justify-between p-6 text-left" onclick="toggleStep('step2')">
+                <div class="flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center text-sm font-bold">2</span>
+                    <span class="font-bold">メインプロンプト (English)</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 transition-transform"></i>
+            </button>
+            <div class="step-content">
+                <div class="p-6 pt-0">
+                    <div class="code-block rounded-2xl p-5 mb-4 relative group">
+                        <p id="mainPrompt" class="text-zinc-300 text-sm leading-relaxed break-words"></p>
+                    </div>
+                    <button onclick="copyToClipboard('mainPrompt')" class="flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold transition-colors">
+                        <i data-lucide="copy" class="w-4 h-4"></i> プロンプトをコピー
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Negative Prompt -->
+        <div class="glass-card rounded-3xl overflow-hidden step-open" id="step3">
+            <button class="w-full flex items-center justify-between p-6 text-left" onclick="toggleStep('step3')">
+                <div class="flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold">3</span>
+                    <span class="font-bold">ネガティブプロンプト</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 transition-transform"></i>
+            </button>
+            <div class="step-content">
+                <div class="p-6 pt-0">
+                    <div class="code-block rounded-2xl p-5 mb-4 border-red-900/20">
+                        <p id="negativePrompt" class="text-zinc-500 text-sm leading-relaxed"></p>
+                    </div>
+                    <button onclick="copyToClipboard('negativePrompt')" class="flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold transition-colors">
+                        <i data-lucide="copy" class="w-4 h-4"></i> コピー
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Next Action -->
+        <div class="glass-card rounded-3xl p-8 text-center bg-gradient-to-b from-zinc-800/20 to-transparent">
+            <div class="mb-6">
+                <div class="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4 text-violet-400">
+                    <i data-lucide="external-link" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">準備が整いました！</h3>
+                <p class="text-zinc-400 text-sm">コピーしたプロンプトをGeminiに貼り付けて生成を開始しましょう。</p>
+            </div>
+            <a href="https://gemini.google.com/app" target="_blank" class="inline-flex items-center gap-3 px-10 py-4 rounded-full bg-white text-black font-bold hover:scale-105 active:scale-95 transition-all">
+                Geminiを開く
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- History (Bonus Feature) -->
+    <div id="historyArea" class="hidden mb-12">
+        <h4 class="text-sm font-bold text-zinc-500 mb-4 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i> 最近の生成履歴
+        </h4>
+        <div id="historyList" class="space-y-2">
+            <!-- History items -->
+        </div>
+    </div>
+
+    <footer class="text-center text-zinc-600 text-xs pb-12">
+        <p>© 2024 Imagen Master Prompt Engine</p>
+        <p class="mt-2">Privacy focused: All processing happens in your browser.</p>
+    </footer>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast fixed bottom-8 left-1/2 -translate-x-1/2 bg-emerald-500 text-black px-6 py-3 rounded-full font-bold shadow-2xl z-50 flex items-center gap-2 pointer-events-none">
+    <i data-lucide="check-circle" class="w-5 h-5"></i>
+    <span id="toastMsg">コピーしました！</span>
+</div>
+
+<script>
+    // Constants and Data
+    const STYLES = {
+        'realistic': {
+            label: '📸 実写・写真系',
+            options: [
+                { id: 'none', label: '指定なし (デフォルト)', prompt: '', neg: '', desc: '入力内容に忠実な自然な描写。' },
+                { id: 'photoreal', label: '写実的 / 8K写真風', prompt: 'hyper-realistic photography, 8k resolution, professional DSLR, detailed skin texture, sharp focus', neg: 'illustration, anime, cartoon, painting', desc: '実写のような極めて高い解像度と質感。' },
+                { id: 'showa', label: '昭和レトロ写真風', prompt: '1970s vintage photography, faded film colors, subtle film grain, nostalgic atmosphere', neg: 'digital look, modern, oversaturated', desc: '昭和のフィルム写真のような懐かしい色調。' },
+                { id: 'mono', label: 'モノクロ写真風', prompt: 'artistic monochrome, high contrast black and white, dramatic shadows, fine grain', neg: 'color, vibrant', desc: '光と影を強調したモノクローム表現。' },
+                { id: 'cyber', label: 'サイバーパンク風', prompt: 'cyberpunk aesthetic, neon glow, futuristic cityscape, cinematic night lighting, rain-soaked reflections', neg: 'natural, daylight, rustic', desc: 'ネオンが輝く近未来的な世界観。' },
+                { id: 'kpop', label: 'K-POPコンセプトフォト風', prompt: 'K-pop idol concept photography, studio lighting, high-fashion styling, glossy aesthetic, magazine quality', neg: 'amateur, casual', desc: 'アイドルのような洗練されたスタジオ撮影風。' }
+            ]
+        },
+        'artistic': {
+            label: '🎨 イラスト・アニメ系',
+            options: [
+                { id: 'webtoon', label: '韓国Webトゥーン風', prompt: 'korean webtoon style, clean digital lines, soft cel shading, trendy character design', neg: 'western comic, rough', desc: '韓国Web漫画のような繊細でモダンな線画。' },
+                { id: 'shonen', label: 'ジャンプ風', prompt: 'shonen manga style, bold dynamic linework, high contrast, action-packed composition', neg: 'soft, pastel, realistic', desc: '少年漫画らしい力強い線と躍動感。' },
+                { id: 'ghibli', label: 'ジブリ風', prompt: 'studio ghibli inspired, hand-painted watercolor style, lush environments, nostalgic charm', neg: '3d render, sharp, dark', desc: '温かみのある手描きアニメーション風。' },
+                { id: 'shinkai', label: '新海誠風', prompt: 'makoto shinkai style, breathtaking sky, dramatic lens flare, vivid saturated colors, emotional lighting', neg: 'dull, flat', desc: '光の反射と空の描写が美しいスタイル。' },
+                { id: 'disney', label: 'ディズニー風', prompt: 'disney animation style, expressive character features, magical atmosphere, smooth shading', neg: 'gritty, realistic', desc: 'ディズニー作品のような親しみやすい造形。' },
+                { id: 'pixar', label: 'ピクサー風', prompt: 'pixar 3d animation style, cinematic 3d rendering, soft rim lighting, subsurface scattering', neg: '2d, flat', desc: 'ピクサー作品のような高品質3Dアニメ風。' },
+                { id: 'jojo', label: 'ジョジョ風', prompt: 'jojo bizarre adventure style, stylized anatomy, dramatic poses, bold hatch lines, vibrant psychedelic colors', neg: 'subtle, normal', desc: '独特のポージングと力強い陰影表現。' },
+                { id: 'oil', label: '油絵風', prompt: 'classical oil painting, visible brushstrokes, rich texture, impasto technique, museum quality', neg: 'digital, smooth', desc: '重厚な絵の具の質感と筆致。' },
+                { id: 'watercolor', label: '水彩画風', prompt: 'delicate watercolor painting, soft pigment bleeding, paper texture, ethereal atmosphere', neg: 'sharp, bold', desc: 'にじみと透明感のある水彩表現。' },
+                { id: 'pop', label: 'ポップアート風', prompt: 'pop art style, bold colors, halftone patterns, comic book aesthetic, high contrast', neg: 'realistic, muted', desc: 'アンディ・ウォーホル風の鮮やかな配色。' },
+                { id: 'isometric', label: 'アイソメトリック風', prompt: 'isometric 3d illustration, clean geometric shapes, miniature diorama style, soft ambient occlusion', neg: 'perspective, messy', desc: '斜め上から俯瞰した箱庭のような表現。' }
+            ]
+        }
+    };
+
+    const RATIOS = {
+        '9:16': '縦型 (9:16)',
+        '1:1': '正方形 (1:1)',
+        '16:9': '横長 (16:9)'
+    };
+
+    // State
+    let selectedRatio = '9:16';
+    let history = JSON.parse(localStorage.getItem('prompt_history') || '[]');
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        initLucide();
+        initStyles();
+        initRatios();
+        updateHistoryUI();
+        
+        // Event Listeners
+        document.getElementById('generateBtn').addEventListener('click', generatePrompt);
+    });
+
+    function initLucide() {
+        lucide.createIcons();
+    }
+
+    function initStyles() {
+        const select = document.getElementById('styleSelect');
+        for (const [catId, cat] of Object.entries(STYLES)) {
+            const group = document.createElement('optgroup');
+            group.label = cat.label;
+            cat.options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.id;
+                el.textContent = opt.label;
+                group.appendChild(el);
+            });
+            select.appendChild(group);
+        }
+    }
+
+    function initRatios() {
+        const container = document.getElementById('ratioContainer');
+        Object.entries(RATIOS).forEach(([id, label]) => {
+            const btn = document.createElement('button');
+            btn.className = `flex-1 py-3 px-2 rounded-xl border border-zinc-800 text-xs font-bold transition-all ${id === selectedRatio ? 'chip-active' : 'bg-zinc-900/50 text-zinc-500 hover:border-zinc-700'}`;
+            btn.textContent = label;
+            btn.onclick = () => {
+                selectedRatio = id;
+                initRatios(); // Re-render
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function toggleStep(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle('step-open');
+        const icon = el.querySelector('[data-lucide="chevron-down"]');
+        if (el.classList.contains('step-open')) {
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    async function generatePrompt() {
+        const idea = document.getElementById('ideaInput').value.trim();
+        const error = document.getElementById('errorMsg');
+        
+        if (!idea) {
+            error.classList.remove('hidden');
+            document.getElementById('ideaInput').focus();
+            return;
+        }
+        error.classList.add('hidden');
+
+        const styleId = document.getElementById('styleSelect').value;
+        const useCharLock = document.getElementById('charLock').checked;
+        const useLighting = document.getElementById('detailedLighting').checked;
+
+        // Find style data
+        let styleData;
+        let isArtistic = false;
+        for (const cat of Object.values(STYLES)) {
+            styleData = cat.options.find(o => o.id === styleId);
+            if (styleData) {
+                isArtistic = cat.label.includes('アート') || cat.label.includes('イラスト');
+                break;
+            }
+        }
+
+        // Logic
+        const commonAdd = 'cinematic lighting, atmospheric depth, high-quality, masterwork, 8k resolution';
+        const artisticAdd = 'clean line art, vibrant color palette, expressive design';
+        const realisticAdd = 'natural textures, precise reflections, sharp details';
+        const lightingAdd = 'volumetric lighting, dramatic shadows, global illumination, ray tracing';
+        const charLockAdd = 'maintain character consistency, same face structure and detailed facial features';
+
+        let promptParts = [idea];
+        if (styleData.prompt) promptParts.push(styleData.prompt);
+        promptParts.push(isArtistic ? artisticAdd : realisticAdd);
+        promptParts.push(commonAdd);
+        if (useLighting) promptParts.push(lightingAdd);
+        if (useCharLock) promptParts.push(charLockAdd);
+        promptParts.push(`aspect ratio ${selectedRatio}`);
+
+        const mainPrompt = promptParts.filter(Boolean).join(', ');
+        const negativePrompt = "blurry, bad anatomy, deformed face, low quality, extra limbs, distorted hands, mutated, poorly drawn, lowres, jpeg artifacts" + (styleData.neg ? `, ${styleData.neg}` : "");
+
+        // UI Update
+        document.getElementById('mainPrompt').textContent = mainPrompt;
+        document.getElementById('negativePrompt').textContent = negativePrompt;
+        
+        const explanationList = document.getElementById('explanationList');
+        explanationList.innerHTML = `
+            <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i> <span><strong>画風：</strong> ${styleData.label} - ${styleData.desc}</span></li>
+            <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i> <span><strong>構図：</strong> ${selectedRatio}のアスペクト比に最適化された配置。</span></li>
+            ${useLighting ? '<li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i> <span><strong>演出：</strong> 詳細なライティング指示により、立体感と没入感を強化。</span></li>' : ''}
+            ${useCharLock ? '<li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i> <span><strong>キャラ：</strong> キャラクターの一貫性を保つための特殊命令を付与。</span></li>' : ''}
+        `;
+        initLucide();
+
+        document.getElementById('resultArea').classList.remove('hidden');
+        document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+
+        // Save to History
+        addToHistory(idea, styleData.label);
+    }
+
+    function addToHistory(idea, styleLabel) {
+        const item = { idea, style: styleLabel, time: new Date().toLocaleTimeString() };
+        history.unshift(item);
+        if (history.length > 5) history.pop();
+        localStorage.setItem('prompt_history', JSON.stringify(history));
+        updateHistoryUI();
+    }
+
+    function updateHistoryUI() {
+        const area = document.getElementById('historyArea');
+        const list = document.getElementById('historyList');
+        if (history.length === 0) {
+            area.classList.add('hidden');
+            return;
+        }
+        area.classList.remove('hidden');
+        list.innerHTML = history.map(h => `
+            <div class="bg-zinc-900/30 border border-zinc-800/50 p-3 rounded-lg flex justify-between items-center text-xs">
+                <div class="truncate mr-4">
+                    <span class="text-zinc-500">[${h.time}]</span> 
+                    <span class="text-zinc-300 font-medium">${h.idea}</span>
+                    <span class="text-violet-400 ml-2">${h.style}</span>
+                </div>
+                <button onclick="reuseHistory('${h.idea.replace(/'/g, "\\'")}')" class="text-violet-400 hover:text-violet-300 font-bold shrink-0">再利用</button>
+            </div>
+        `).join('');
+    }
+
+    function reuseHistory(text) {
+        document.getElementById('ideaInput').value = text;
+        document.getElementById('ideaInput').focus();
+    }
+
+    function copyToClipboard(id) {
+        const text = document.getElementById(id).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("プロンプトをコピーしました！");
+        });
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const msgEl = document.getElementById('toastMsg');
+        msgEl.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+</script>
+</body>
+</html>
